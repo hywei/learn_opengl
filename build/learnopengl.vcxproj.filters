@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="shader">
+      <UniqueIdentifier>{e528093f-ecfc-4eda-b414-a94ea079080c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shader\shader.fs">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\shader.vs">
+      <Filter>shader</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\camera.h" />
+  </ItemGroup>
+</Project>
