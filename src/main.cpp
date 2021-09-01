@@ -13,6 +13,7 @@
 #include <stb_image/stb_image.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+
 void processInput(GLFWwindow* window);
 
 const int k_width = 800;
@@ -108,6 +109,9 @@ uint32_t createTexture(const char* texture_file, GLenum format)
 
 Camera camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 0.f, 0.f));
 
+float delta_time = 0.f;
+float last_frame_time = 0.f;
+
 int main()
 {
 	if (!glfwInit())
@@ -126,7 +130,9 @@ int main()
 		glfwTerminate();
 		return -1;
 	}
+
 	glfwMakeContextCurrent(window);
+
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -191,6 +197,9 @@ int main()
 	uint32_t frame_index = 0;
 	while (!glfwWindowShouldClose(window))
 	{
+		float current_frame_time = glfwGetTime();
+		delta_time = current_frame_time - last_frame_time;
+
 		processInput(window);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -227,6 +236,7 @@ int main()
 		glfwPollEvents();
 
 		frame_index++;
+		last_frame_time = current_frame_time;
 	}
 
 	// de-allocate all resources once they've outlived their purpose
@@ -251,7 +261,7 @@ void processInput(GLFWwindow* window)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
-	const float camear_speed = 0.05f;
+	const float camear_speed = 2.5f * delta_time;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
 		camera.setPosition(camera.getPosition() + camear_speed * camera.getDirection());
@@ -264,12 +274,12 @@ void processInput(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 	{
-		camera.setPosition(camera.getPosition() - camear_speed * (glm::normalize(glm::cross(camera.getDirection(), Camera::UP_DIR))));
+		camera.setPosition(camera.getPosition() - camear_speed * (glm::normalize(glm::cross(camera.getDirection(), Camera::WORLD_UP_DIR))));
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 	{
-		camera.setPosition(camera.getPosition() + camear_speed * (glm::normalize(glm::cross(camera.getDirection(), Camera::UP_DIR))));
+		camera.setPosition(camera.getPosition() + camear_speed * (glm::normalize(glm::cross(camera.getDirection(), Camera::WORLD_UP_DIR))));
 	}
 
 }
