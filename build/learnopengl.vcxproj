@@ -28,6 +28,7 @@
     <ClInclude Include="..\src\shader.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\shader\light.fs" />
     <None Include="..\shader\shader.fs" />
     <None Include="..\shader\shader.vs" />
   </ItemGroup>

@@ -12,6 +12,9 @@
     <None Include="..\shader\shader.vs">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\shader\light.fs">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\camera.h" />
