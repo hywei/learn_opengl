@@ -22,6 +22,7 @@ add_executable(learn_opengl
   # Header files
   src/shader.h
   src/camera.h
+  src/light.h
 
   # Source code files
   src/main.cpp

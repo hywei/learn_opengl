@@ -1,5 +1,6 @@
-#include <GLFW/glfw3.h>
 #include <glad/glad.h>
+
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -7,6 +8,7 @@
 #include <iostream>
 
 #include "camera.h"
+#include "light.h"
 #include "shader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -21,36 +23,55 @@ const int k_height = 900;
 
 float vertices[] = {
     // positions          // normals           // texture coords
-    -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 0.0f,
-    0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f, 1.0f,
-    -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 1.0f, -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,  0.5f,  -0.5f, -0.5f, 0.0f,
+    0.0f,  -1.0f, 1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f,  1.0f,
+    0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 1.0f,  1.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,
+    0.0f,  -1.0f, 0.0f,  1.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.0f,  0.0f,
 
-    -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 0.0f,
-    0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f, 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f, 1.0f,
-    -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 1.0f, -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f, 0.0f,
+    -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, 0.5f,  0.0f,
+    0.0f,  1.0f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
+    0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,  -0.5f, 0.5f,  0.5f,  0.0f,
+    0.0f,  1.0f,  0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
 
-    -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f, -0.5f, 0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f, -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f, 1.0f,
-    -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, -1.0f,
+    0.0f,  0.0f,  1.0f,  1.0f,  -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f,  1.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  -1.0f,
+    0.0f,  0.0f,  0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  1.0f,  0.0f,
 
-    0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
-    0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
-    0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f, 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+    0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 1.0f,
+    0.0f,  0.0f,  1.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+    0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  1.0f,
+    0.0f,  0.0f,  0.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 
-    -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  1.0f, 1.0f,
-    0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f, 0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f, 0.0f,
-    -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.0f, 0.0f, -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f,  1.0f,  0.5f,  -0.5f, -0.5f, 0.0f,
+    -1.0f, 0.0f,  1.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f,  0.0f,
+    0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  1.0f,  0.0f,  -0.5f, -0.5f, 0.5f,  0.0f,
+    -1.0f, 0.0f,  0.0f,  0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.0f,  1.0f,
 
-    -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-    0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-    -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
+    -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f,  1.0f,  0.5f,  0.5f,  -0.5f, 0.0f,
+    1.0f,  0.0f,  1.0f,  1.0f,  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
+    0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  0.0f,
+    1.0f,  0.0f,  0.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.0f,  1.0f};
+
+// positions all containers
+glm::vec3 cubePositions[] = {glm::vec3(0.0f, 0.0f, 0.0f),
+                             glm::vec3(2.0f, 5.0f, -15.0f),
+                             glm::vec3(-1.5f, -2.2f, -2.5f),
+                             glm::vec3(-3.8f, -2.0f, -12.3f),
+                             glm::vec3(2.4f, -0.4f, -3.5f),
+                             glm::vec3(-1.7f, 3.0f, -7.5f),
+                             glm::vec3(1.3f, -2.0f, -2.5f),
+                             glm::vec3(1.5f, 2.0f, -2.5f),
+                             glm::vec3(1.5f, 0.2f, -1.5f),
+                             glm::vec3(-1.3f, 1.0f, -1.5f)};
 
 uint32_t createTexture(const char* texture_file)
 {
     uint32_t texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    // set the texture wrapping/filtering options ( on the currently bound texture object)
+    // set the texture wrapping/filtering options ( on the currently bound
+    // texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -79,10 +100,11 @@ uint32_t createTexture(const char* texture_file)
     return texture;
 }
 
-Camera camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 0.f, 0.f));
-
 float delta_time      = 0.f;
 float last_frame_time = 0.f;
+
+Camera camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 0.f, 0.f));
+Light  light;
 
 int main()
 {
@@ -133,21 +155,23 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)0);
     glEnableVertexAttribArray(0);
     // normal attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
+    glVertexAttribPointer(
+        1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     // texture coord attribute
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
+    glVertexAttribPointer(
+        2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    /// second, configure the light's VAO (VBO stays the same; the vertices are the
-    /// same for the lgiht object which is also a 3D cube
+    /// second, configure the light's VAO (VBO stays the same; the vertices are
+    /// the same for the lgiht object which is also a 3D cube
     uint32_t lightCubeVAO;
     glGenVertexArrays(1, &lightCubeVAO);
     glBindVertexArray(lightCubeVAO);
 
-    // we only need to bind the VBO (to link it with glVertexAttribPointer), no need
-    // to fill it; the VBO's data already contains all we need (it's already bound,
-    // but we do it again for educational purposes)
+    // we only need to bind the VBO (to link it with glVertexAttribPointer), no
+    // need to fill it; the VBO's data already contains all we need (it's
+    // already bound, but we do it again for educational purposes)
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (const void*)0);
@@ -156,7 +180,6 @@ int main()
     stbi_set_flip_vertically_on_load(true);
     uint32_t diffuse_texture  = createTexture("../../../data/container2.png");
     uint32_t specular_texture = createTexture("../../../data/container2_specular.png");
-    uint32_t emission_texture = createTexture("../../../data/matrix.jpg");
 
     Shader lightingShader("../../../shader/shader.vs", "../../../shader/shader.fs");
     Shader lightCubeShader("../../../shader/shader.vs", "../../../shader/light.fs");
@@ -169,9 +192,10 @@ int main()
     glm::mat4 model      = glm::mat4(1.f);
     glm::mat4 view       = camera.getLookAt();
     glm::mat4 projection = glm::mat4(1.f);
-    projection           = glm::perspective(glm::radians(45.f), (float)k_width / (float)k_height, 0.1f, 100.f);
+    projection =
+        glm::perspective(glm::radians(45.f), (float)k_width / (float)k_height, 0.1f, 100.f);
 
-    glm::vec3 lightPos(1.0f, 0.6f, 0.f);
+    glm::vec3 lightPos(2.0f, 1.2f, 0.f);
 
     uint32_t frame_index = 0;
     while (!glfwWindowShouldClose(window))
@@ -181,11 +205,12 @@ int main()
 
         processInput(window);
 
-        glClearColor(0.1f, 0.f, 0.1f, 1.0f);
+        // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        lightPos.x = static_cast<float>(sin(glfwGetTime()));
-        lightPos.z = static_cast<float>(cos(glfwGetTime()));
+        // lightPos.x = static_cast<float>(sin(glfwGetTime()));
+        // lightPos.z = static_cast<float>(cos(glfwGetTime()));
 
         glm::vec3 lightColor;
         lightColor.x = static_cast<float>(sin(glfwGetTime() * 2.0f));
@@ -199,13 +224,18 @@ int main()
         lightingShader.use();
         lightingShader.setFloat("material.shininess", 64.f);
 
-        lightingShader.setVec3f("light.position", lightPos.x, lightPos.y, lightPos.z);
-        // lightingShader.setVec3f("light.ambient", ambientColor.x, ambientColor.y, ambientColor.z);
-        // lightingShader.setVec3f("light.diffuse", diffuseColor.x, diffuseColor.y, diffuseColor.z);
-
-        lightingShader.setVec3f("light.ambient", 0.2f, 0.2f, 0.2f);
-        lightingShader.setVec3f("light.diffuse", 0.5f, 0.5f, 0.5f);
+        lightingShader.setVec3f("light.position", cameraPos.x, cameraPos.y, cameraPos.z);
+        lightingShader.setVec3f("light.ambient", 0.1f, 0.1f, 0.1f);
+        lightingShader.setVec3f("light.diffuse", 0.8f, 0.8f, 0.8f);
         lightingShader.setVec3f("light.specular", 1.0f, 1.0f, 1.0f);
+        lightingShader.setFloat("light.constant", 1.0f);
+        lightingShader.setFloat("light.linear", 0.09f);
+        lightingShader.setFloat("light.quadratic", 0.032f);
+
+        glm::vec3 cameraDir = camera.getDirection();
+        lightingShader.setVec3f("light.direction", cameraDir.x, cameraDir.y, cameraDir.z);
+        lightingShader.setFloat("light.cutoff", glm::cos(glm::radians(12.5f)));
+        lightingShader.setFloat("light.outCutoff", glm::cos(glm::radians(17.5f)));
 
         lightingShader.setVec3f("viewPos", cameraPos.x, cameraPos.y, cameraPos.z);
 
@@ -217,16 +247,22 @@ int main()
         lightingShader.setMat4fv("projection", glm::value_ptr(projection));
 
         glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (int index = 0; index < 10; index++)
+        {
+            model       = glm::mat4(1.f);
+            model       = glm::translate(model, cubePositions[index]);
+            float angle = 20.0f * index;
+            model       = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            lightingShader.setMat4fv("model", glm::value_ptr(model));
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuse_texture);
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, specular_texture);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, emission_texture);
 
         model = glm::mat4(1.f);
         model = glm::translate(model, lightPos);
@@ -284,12 +320,14 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
         camera.setPosition(camera.getPosition() -
-                           camear_speed * (glm::normalize(glm::cross(camera.getDirection(), Camera::WORLD_UP_DIR))));
+                           camear_speed * (glm::normalize(glm::cross(camera.getDirection(),
+                                                                     Camera::WORLD_UP_DIR))));
     }
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
         camera.setPosition(camera.getPosition() +
-                           camear_speed * (glm::normalize(glm::cross(camera.getDirection(), Camera::WORLD_UP_DIR))));
+                           camear_speed * (glm::normalize(glm::cross(camera.getDirection(),
+                                                                     Camera::WORLD_UP_DIR))));
     }
 }
