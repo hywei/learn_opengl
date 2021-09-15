@@ -23,14 +23,16 @@ add_executable(learn_opengl
   src/shader.h
   src/camera.h
   src/light.h
+  src/mesh.h
 
   # Source code files
   src/main.cpp
   src/shader.cpp
+  src/mesh.cpp
   src/glad.c
 )
 
-target_link_libraries(learn_opengl glfw3)
+target_link_libraries(learn_opengl glfw3 assimp-vc142-mt)
 
 set_target_properties( learn_opengl
     PROPERTIES
