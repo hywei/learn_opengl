@@ -34,3 +34,5 @@
 build/.vs/*
 build/x64/*
 build/*
+
+.vscode

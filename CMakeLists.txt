@@ -24,11 +24,13 @@ add_executable(learn_opengl
   src/camera.h
   src/light.h
   src/mesh.h
+  src/model.h
 
   # Source code files
   src/main.cpp
   src/shader.cpp
   src/mesh.cpp
+  src/model.cpp
   src/glad.c
 )
 
