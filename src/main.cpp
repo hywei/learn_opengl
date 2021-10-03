@@ -60,12 +60,11 @@ float cube_vertices[] = {
     -0.5f, 0.5f,  0.5f,  0.0f, 0.0f, -0.5f, 0.5f,  -0.5f, 0.0f, 1.0f};
 
 float plane_vertices[] = {
-    // positions          // texture Coords
-    5.0f, -0.5f, 5.0f,  2.0f,  0.0f,  -5.0f, -0.5f, 5.0f,
-    0.0f, 0.0f,  -5.0f, -0.5f, -5.0f, 0.0f,  2.0f,
-
-    5.0f, -0.5f, 5.0f,  2.0f,  0.0f,  -5.0f, -0.5f, -5.0f,
-    0.0f, 2.0f,  5.0f,  -0.5f, -5.0f, 2.0f,  2.0f};
+    // positions       // normals // texture Coords
+    5.0f, -0.5f, 5.0f, 0.0f, 1.0f,  0.0f,  2.0f,  0.0f, -5.0f, -0.5f, 5.0f,  0.0f,
+    1.0f, 0.0f,  0.0f, 0.0f, -5.0f, -0.5f, -5.0f, 0.0f, 1.0f,  0.0f,  0.0f,  2.0f,
+    5.0f, -0.5f, 5.0f, 0.0f, 1.0f,  0.0f,  2.0f,  0.0f, -5.0f, -0.5f, -5.0f, 0.0f,
+    1.0f, 0.0f,  0.0f, 2.0f, 5.0f,  -0.5f, -5.0f, 0.0f, 1.0f,  0.0f,  2.0f,  2.0f};
 
 // vertex attributes for a quad that fills the entire scene in NDC
 float quad_vertices[] = {
@@ -146,9 +145,11 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices), &plane_vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
     // screen quad
     uint32_t quad_vao, quad_vbo;
@@ -168,6 +169,7 @@ int main()
     Shader normal_shader("../../../shader/framebuffer.vs", "../../../shader/framebuffer.fs");
     Shader screen_shader("../../../shader/framebuffer_screen.vs",
                          "../../../shader/framebuffer_screen.fs");
+    Shader plane_shader("../../../shader/plane.vs", "../../../shader/plane.fs");
 
     normal_shader.use();
     normal_shader.setInt("texture1", 0);
@@ -219,6 +221,9 @@ int main()
     skybox_shader.use();
     skybox_shader.setInt("skybox", 0);
 
+    plane_shader.use();
+    plane_shader.setInt("skybox", 0);
+
     uint32_t skybox_vao, skybox_vbo;
     glGenVertexArrays(1, &skybox_vao);
     glGenBuffers(1, &skybox_vbo);
@@ -267,10 +272,17 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // floor
-        model = glm::mat4(1.0f);
+        glm::vec3 camera_pos = camera.getPosition();
+        model                = glm::mat4(1.0f);
+
+        plane_shader.use();
+        plane_shader.setMat4fv("model", glm::value_ptr(model));
+        plane_shader.setMat4fv("view", glm::value_ptr(view));
+        plane_shader.setMat4fv("projection", glm::value_ptr(projection));
+        plane_shader.setVec3f("cameraPos", camera_pos.x, camera_pos.y, camera_pos.z);
+
         glBindVertexArray(plane_vao);
-        glBindTexture(GL_TEXTURE_2D, floor_texture);
-        normal_shader.setMat4fv("model", glm::value_ptr(model));
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
