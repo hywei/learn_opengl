@@ -33,13 +33,12 @@ float last_frame_time = 0.f;
 Camera camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 0.f, 0.f));
 Light  light;
 
-float quad_vertices[] = {
-    // positions     // colors
-    -0.05f, 0.05f, 1.0f,   0.0f,   0.0f, 0.05f, -0.05f, 0.0f,
-    1.0f,   0.0f,  -0.05f, -0.05f, 0.0f, 0.0f,  1.0f,
-
-    -0.05f, 0.05f, 1.0f,   0.0f,   0.0f, 0.05f, -0.05f, 0.0f,
-    1.0f,   0.0f,  0.05f,  0.05f,  0.0f, 1.0f,  1.0f};
+float points[] = {
+    -0.5f, 0.5f,  1.0f, 0.0f, 0.0f, // top-left
+    0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // top-right
+    0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, // bottom-right
+    -0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // bottom-left
+};
 
 int main()
 {
@@ -74,14 +73,16 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, k_width, k_height);
 
-    Shader instancing_shader("../../../shader/instancing.vs", "../../../shader/instancing.fs");
+    Shader gs_shader("../../../shader/geometry_shader.vs",
+                     "../../../shader/geometry_shader.fs",
+                     "../../../shader/geometry_shader.gs");
 
-    uint32_t quad_vao, quad_vbo;
-    glGenVertexArrays(1, &quad_vao);
-    glGenBuffers(1, &quad_vbo);
-    glBindVertexArray(quad_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
+    uint32_t point_vao, point_vbo;
+    glGenVertexArrays(1, &point_vao);
+    glGenBuffers(1, &point_vbo);
+    glBindVertexArray(point_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
@@ -92,32 +93,6 @@ int main()
 
     glm::mat4 view  = glm::mat4(1.f);
     glm::mat4 model = glm::mat4(1.f);
-
-    glm::vec2   translations[100];
-    int         translation_index = 0;
-    const float offset            = 0.1f;
-    for (int y = -10; y < 10; y += 2)
-    {
-        for (int x = -10; x < 10; x += 2)
-        {
-            glm::vec2 trans;
-            trans.x                           = (float)x / 10.f + offset;
-            trans.y                           = (float)y / 10.f + offset;
-            translations[translation_index++] = trans;
-        }
-    }
-
-    uint32_t instance_vbo;
-    glGenBuffers(1, &instance_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glEnableVertexAttribArray(2);
-    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glVertexAttribDivisor(2, 1);
 
     uint32_t frame_index = 0;
     while (!glfwWindowShouldClose(window))
@@ -132,15 +107,9 @@ int main()
 
         view = camera.getLookAt();
 
-        instancing_shader.use();
-        for (size_t index = 0; index < 100; index++)
-        {
-            instancing_shader.setVec2f(("offsets[" + std::to_string(index) + "]"),
-                                       translations[index].x,
-                                       translations[index].y);
-        }
-        glBindVertexArray(quad_vao);
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+        gs_shader.use();
+        glBindVertexArray(point_vao);
+        glDrawArrays(GL_POINTS, 0, 4);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -149,8 +118,8 @@ int main()
         last_frame_time = current_frame_time;
     }
 
-    glDeleteVertexArrays(1, &quad_vao);
-    glDeleteBuffers(1, &quad_vao);
+    glDeleteVertexArrays(1, &point_vao);
+    glDeleteBuffers(1, &point_vao);
 
     glfwTerminate();
 
