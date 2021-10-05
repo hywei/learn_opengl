@@ -33,30 +33,13 @@ float last_frame_time = 0.f;
 Camera camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 0.f, 0.f));
 Light  light;
 
-float cube_vertices[] = {
-    // positions
-    -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f,
-    0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
-
-    -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
-    0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,
-
-    -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,
-
-    0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f,
-    0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
-
-    -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,
-    0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f,
-
-    -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,
-    0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f};
-
 float quad_vertices[] = {
-    // positions   // texCoords
-    -1.0f, 1.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
-    -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f};
+    // positions     // colors
+    -0.05f, 0.05f, 1.0f,   0.0f,   0.0f, 0.05f, -0.05f, 0.0f,
+    1.0f,   0.0f,  -0.05f, -0.05f, 0.0f, 0.0f,  1.0f,
+
+    -0.05f, 0.05f, 1.0f,   0.0f,   0.0f, 0.05f, -0.05f, 0.0f,
+    1.0f,   0.0f,  0.05f,  0.05f,  0.0f, 1.0f,  1.0f};
 
 int main()
 {
@@ -68,7 +51,6 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
 
     GLFWwindow* window = glfwCreateWindow(k_width, k_height, "LearnOpenGL", NULL, NULL);
     if (window == nullptr)
@@ -89,21 +71,10 @@ int main()
     }
     // stbi_set_flip_vertically_on_load(true);
 
+    glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, k_width, k_height);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_MULTISAMPLE);
-
-    Shader msaa_shader("../../../shader/msaa.vs", "../../../shader/msaa.fs");
-
-    uint32_t cube_vao, cube_vbo;
-    glGenVertexArrays(1, &cube_vao);
-    glGenBuffers(1, &cube_vbo);
-    glBindVertexArray(cube_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    Shader instancing_shader("../../../shader/instancing.vs", "../../../shader/instancing.fs");
 
     uint32_t quad_vao, quad_vbo;
     glGenVertexArrays(1, &quad_vao);
@@ -112,62 +83,41 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, quad_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-    uint32_t msaa_fbo;
-    glGenFramebuffers(1, &msaa_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, msaa_fbo);
-
-    uint32_t msaa_tex;
-    glGenTextures(1, &msaa_tex);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_tex);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, k_width, k_height, GL_TRUE);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msaa_tex, 0);
-
-    uint32_t msaa_rbo;
-    glGenRenderbuffers(1, &msaa_rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, msaa_rbo);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, k_width, k_height);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glFramebufferRenderbuffer(
-        GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msaa_rbo);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    uint32_t intermediate_fbo;
-    glGenFramebuffers(1, &intermediate_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, intermediate_fbo);
-    uint32_t screen_tex;
-    glGenTextures(1, &screen_tex);
-    glBindTexture(GL_TEXTURE_2D, screen_tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, k_width, k_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screen_tex, 0);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        std::cout << "ERROR::FRAMEBUFFER:: Intermediate Framebuffer is not complete!" << std::endl;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    Shader screen_shader("../../../shader/framebuffer_screen.vs",
-                         "../../../shader/framebuffer_screen.fs");
-    screen_shader.use();
-    screen_shader.setInt("screenTexture", 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
 
     glm::mat4 projection =
         glm::perspective(glm::radians(45.f), (float)k_width / (float)k_height, 0.1f, 100.f);
+
     glm::mat4 view  = glm::mat4(1.f);
     glm::mat4 model = glm::mat4(1.f);
+
+    glm::vec2   translations[100];
+    int         translation_index = 0;
+    const float offset            = 0.1f;
+    for (int y = -10; y < 10; y += 2)
+    {
+        for (int x = -10; x < 10; x += 2)
+        {
+            glm::vec2 trans;
+            trans.x                           = (float)x / 10.f + offset;
+            trans.y                           = (float)y / 10.f + offset;
+            translations[translation_index++] = trans;
+        }
+    }
+
+    uint32_t instance_vbo;
+    glGenBuffers(1, &instance_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribDivisor(2, 1);
 
     uint32_t frame_index = 0;
     while (!glfwWindowShouldClose(window))
@@ -180,36 +130,17 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, msaa_fbo);
-        glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-
         view = camera.getLookAt();
 
-        msaa_shader.use();
-        msaa_shader.setMat4fv("projection", glm::value_ptr(projection));
-        msaa_shader.setMat4fv("model", glm::value_ptr(model));
-        msaa_shader.setMat4fv("view", glm::value_ptr(view));
-
-        glBindVertexArray(cube_vao);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, msaa_fbo);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediate_fbo);
-        glBlitFramebuffer(
-            0, 0, k_width, k_height, 0, 0, k_width, k_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDisable(GL_DEPTH_TEST);
-
-        screen_shader.use();
+        instancing_shader.use();
+        for (size_t index = 0; index < 100; index++)
+        {
+            instancing_shader.setVec2f(("offsets[" + std::to_string(index) + "]"),
+                                       translations[index].x,
+                                       translations[index].y);
+        }
         glBindVertexArray(quad_vao);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, screen_tex);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -218,8 +149,8 @@ int main()
         last_frame_time = current_frame_time;
     }
 
-    glDeleteVertexArrays(1, &cube_vao);
-    glDeleteBuffers(1, &cube_vao);
+    glDeleteVertexArrays(1, &quad_vao);
+    glDeleteBuffers(1, &quad_vao);
 
     glfwTerminate();
 
