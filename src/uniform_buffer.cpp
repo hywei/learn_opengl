@@ -33,11 +33,25 @@ float last_frame_time = 0.f;
 Camera camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 0.f, 0.f));
 Light  light;
 
-float points[] = {
-    -0.5f, 0.5f,  1.0f, 0.0f, 0.0f, // top-left
-    0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // top-right
-    0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, // bottom-right
-    -0.5f, -0.5f, 1.0f, 1.0f, 0.0f  // bottom-left
+float cube_vertices[] = {
+    // positions
+    -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f,
+    0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
+
+    -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,
+
+    -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,
+
+    0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f,
+    0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
+
+    -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,
+    0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f,
+
+    -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f,
 };
 
 int main()
@@ -73,23 +87,48 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, k_width, k_height);
 
-    Shader gs_shader("../../../shader/geometry_shader.vs",
-                     "../../../shader/geometry_shader.fs",
-                     "../../../shader/geometry_shader.gs");
+    Shader shader_red("../../../shader/uniform_buffer.vs", "../../../shader/uniform_buffer_red.fs");
+    Shader shader_blue("../../../shader/uniform_buffer.vs",
+                       "../../../shader/uniform_buffer_blue.fs");
+    Shader shader_green("../../../shader/uniform_buffer.vs",
+                        "../../../shader/uniform_buffer_green.fs");
+    Shader shader_yellow("../../../shader/uniform_buffer.vs",
+                         "../../../shader/uniform_buffer_yellow.fs");
 
-    uint32_t point_vao, point_vbo;
-    glGenVertexArrays(1, &point_vao);
-    glGenBuffers(1, &point_vbo);
-    glBindVertexArray(point_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, point_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
+    uint32_t cube_vao, cube_vbo;
+    glGenVertexArrays(1, &cube_vao);
+    glGenBuffers(1, &cube_vbo);
+    glBindVertexArray(cube_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    // configure a uniform buffer object
+    // 1. get the relevant block indices
+    uint32_t uniform_block_index_red    = glGetUniformBlockIndex(shader_red.ID, "Matrices");
+    uint32_t uniform_block_index_blue   = glGetUniformBlockIndex(shader_blue.ID, "Matrices");
+    uint32_t uniform_block_index_green  = glGetUniformBlockIndex(shader_green.ID, "Matrices");
+    uint32_t uniform_block_index_yellow = glGetUniformBlockIndex(shader_yellow.ID, "Matrices");
+    // 2. link each shader's uniform block to this uniform binding point
+    glUniformBlockBinding(shader_red.ID, uniform_block_index_red, 0);
+    glUniformBlockBinding(shader_blue.ID, uniform_block_index_blue, 0);
+    glUniformBlockBinding(shader_green.ID, uniform_block_index_green, 0);
+    glUniformBlockBinding(shader_yellow.ID, uniform_block_index_yellow, 0);
+    // 3. create the uniform buffer
+    uint32_t ubo_matrices;
+    glGenBuffers(1, &ubo_matrices);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices);
+    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    // define the rage of the buffer that links to a uniform binding point
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo_matrices, 0, 2 * sizeof(glm::mat4));
 
     glm::mat4 projection =
         glm::perspective(glm::radians(45.f), (float)k_width / (float)k_height, 0.1f, 100.f);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glm::mat4 view  = glm::mat4(1.f);
     glm::mat4 model = glm::mat4(1.f);
@@ -106,10 +145,36 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         view = camera.getLookAt();
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo_matrices);
+        glBufferSubData(
+            GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        gs_shader.use();
-        glBindVertexArray(point_vao);
-        glDrawArrays(GL_POINTS, 0, 4);
+        // draw cubes;
+        glBindVertexArray(cube_vao);
+        shader_red.use();
+        model = glm::mat4(1.f);
+        model = glm::translate(model, glm::vec3(-0.75f, 0.75f, 0.0f));
+        shader_red.setMat4fv("model", glm::value_ptr(model));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        shader_green.use();
+        model = glm::mat4(1.f);
+        model = glm::translate(model, glm::vec3(0.75f, 0.75f, 0.0f));
+        shader_green.setMat4fv("model", glm::value_ptr(model));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        shader_blue.use();
+        model = glm::mat4(1.f);
+        model = glm::translate(model, glm::vec3(0.75f, -0.75f, 0.0f));
+        shader_blue.setMat4fv("model", glm::value_ptr(model));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        shader_yellow.use();
+        model = glm::mat4(1.f);
+        model = glm::translate(model, glm::vec3(-0.75f, -0.75f, 0.0f));
+        shader_yellow.setMat4fv("model", glm::value_ptr(model));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -118,8 +183,8 @@ int main()
         last_frame_time = current_frame_time;
     }
 
-    glDeleteVertexArrays(1, &point_vao);
-    glDeleteBuffers(1, &point_vao);
+    glDeleteVertexArrays(1, &cube_vao);
+    glDeleteBuffers(1, &cube_vbo);
 
     glfwTerminate();
 
