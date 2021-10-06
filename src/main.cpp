@@ -279,6 +279,7 @@ uint32_t createTexture(const char* texture_file)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 8);
 
     int      width, height, nrChannels;
     uint8_t* data = stbi_load(texture_file, &width, &height, &nrChannels, 0);
