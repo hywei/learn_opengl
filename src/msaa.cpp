@@ -33,13 +33,25 @@ float last_frame_time = 0.f;
 Camera camera(glm::vec3(0.f, 0.f, 3.f), glm::vec3(0.f, 0.f, 0.f));
 Light  light;
 
-float plane_vertices[] = {
-    // positions            // normals         // texcoords
-    10.0f, -0.5f, 10.0f, 0.0f,  1.0f,   0.0f,  10.0f,  0.0f, -10.0f, -0.5f, 10.0f,  0.0f,
-    1.0f,  0.0f,  0.0f,  0.0f,  -10.0f, -0.5f, -10.0f, 0.0f, 1.0f,   0.0f,  0.0f,   10.0f,
+float cube_vertices[] = {
+    // positions
+    -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f,
+    0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
 
-    10.0f, -0.5f, 10.0f, 0.0f,  1.0f,   0.0f,  10.0f,  0.0f, -10.0f, -0.5f, -10.0f, 0.0f,
-    1.0f,  0.0f,  0.0f,  10.0f, 10.0f,  -0.5f, -10.0f, 0.0f, 1.0f,   0.0f,  10.0f,  10.0f};
+    -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,
+
+    -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,
+
+    0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f,
+    0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
+
+    -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,
+    0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f,
+
+    -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f};
 
 float quad_vertices[] = {
     // positions   // texCoords
@@ -82,25 +94,16 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
 
-    uint32_t plane_vao, plane_vbo;
-    glGenVertexArrays(1, &plane_vao);
-    glGenBuffers(1, &plane_vbo);
-    glBindVertexArray(plane_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, plane_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices), &plane_vertices, GL_STATIC_DRAW);
+    Shader msaa_shader("../../../shader/msaa.vs", "../../../shader/msaa.fs");
+
+    uint32_t cube_vao, cube_vbo;
+    glGenVertexArrays(1, &cube_vao);
+    glGenBuffers(1, &cube_vbo);
+    glBindVertexArray(cube_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), &cube_vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glBindVertexArray(0);
-
-    uint32_t floor_texture = createTexture("../../../data/wood.png");
-
-    Shader blinn_phone_shader("../../../shader/blinn_phone.vs", "../../../shader/blinn_phone.fs");
-    blinn_phone_shader.use();
-    blinn_phone_shader.setInt("texture1", 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
     uint32_t quad_vao, quad_vbo;
     glGenVertexArrays(1, &quad_vao);
@@ -112,7 +115,6 @@ int main()
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glBindVertexArray(0);
 
     uint32_t msaa_fbo;
     glGenFramebuffers(1, &msaa_fbo);
@@ -167,8 +169,6 @@ int main()
     glm::mat4 view  = glm::mat4(1.f);
     glm::mat4 model = glm::mat4(1.f);
 
-    glm::vec3 light_pos(0.0f, 0.0f, 0.0f);
-
     uint32_t frame_index = 0;
     while (!glfwWindowShouldClose(window))
     {
@@ -187,19 +187,13 @@ int main()
 
         view = camera.getLookAt();
 
-        glm::vec3 camera_pos = camera.getPosition();
+        msaa_shader.use();
+        msaa_shader.setMat4fv("projection", glm::value_ptr(projection));
+        msaa_shader.setMat4fv("model", glm::value_ptr(model));
+        msaa_shader.setMat4fv("view", glm::value_ptr(view));
 
-        blinn_phone_shader.use();
-        blinn_phone_shader.setMat4fv("projection", glm::value_ptr(projection));
-        blinn_phone_shader.setMat4fv("model", glm::value_ptr(model));
-        blinn_phone_shader.setMat4fv("view", glm::value_ptr(view));
-        blinn_phone_shader.setVec3f("lightPos", light_pos.x, light_pos.y, light_pos.z);
-        blinn_phone_shader.setVec3f("viewPos", camera_pos.x, camera_pos.y, camera_pos.z);
-
-        glBindVertexArray(plane_vao);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, floor_texture);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(cube_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glBindFramebuffer(GL_READ_FRAMEBUFFER, msaa_fbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediate_fbo);
@@ -224,8 +218,8 @@ int main()
         last_frame_time = current_frame_time;
     }
 
-    glDeleteVertexArrays(1, &plane_vao);
-    glDeleteBuffers(1, &plane_vao);
+    glDeleteVertexArrays(1, &cube_vao);
+    glDeleteBuffers(1, &cube_vao);
 
     glfwTerminate();
 
