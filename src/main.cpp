@@ -96,7 +96,7 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glBindVertexArray(0);
 
-    uint32_t floor_texture = createTexture("../../../data/wood.png");
+    uint32_t floor_texture = createTexture("../../../data/chess.png");
 
     Shader blinn_phone_shader("../../../shader/blinn_phone.vs", "../../../shader/blinn_phone.fs");
     blinn_phone_shader.use();
@@ -277,9 +277,9 @@ uint32_t createTexture(const char* texture_file)
     // texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 8);
+    // glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 8);
 
     int      width, height, nrChannels;
     uint8_t* data = stbi_load(texture_file, &width, &height, &nrChannels, 0);

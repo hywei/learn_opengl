@@ -25,6 +25,8 @@ add_executable(learn_opengl
   src/light.h
   src/mesh.h
   src/model.h
+  src/input.h
+  src/app.h
 
   # Source code files
   src/main.cpp

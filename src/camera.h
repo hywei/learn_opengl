@@ -4,6 +4,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+struct CameraModifer
+{
+    glm::vec3 position {0.f, 0.f, 0.f};
+    glm::vec3 target {0.f, 0.f, 0.f};
+    glm::vec3 up {0.f, 0.f, 0.f};
+    float     fov {0};
+    float     near_clip {0};
+    float     far_clip {0};
+};
+
 class Camera {
 public:
     static const glm::vec3 WORLD_UP_DIR;
@@ -36,9 +46,15 @@ public:
         return glm::lookAt(camera_position_, target_position_, WORLD_UP_DIR);
     }
 
+    void updateProjection(float aspect_ratio);
+    
 protected:
     glm::vec3 camera_position_ {0.f, 0.f, 0.f};
     glm::vec3 target_position_ {0.f, 0.f, 0.f};
+    glm::vec3 up_dir_ {0.f, 0.f, 0.f};
+    float     fov_ {50.f}; // horizontal fov
+    float     near_clip_ {1.f};
+    float     far_clip_ {10000.f};
 };
 
 const glm::vec3 Camera::WORLD_UP_DIR = glm::vec3(0.f, 1.f, 0.f);
